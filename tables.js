@@ -26,18 +26,17 @@ function getData(){
 
                 if(titleText.includes("price target raised")){
                     data.push({
-                
+                        
                         title:r.getElementsByClassName('newsTitleLink')[0].innerText,
                         ticker:r.getElementsByClassName('ticker fpo_overlay')[0].innerText,
                         time:r.getElementsByClassName('fpo_overlay soloHora')[0].innerText,
-                        date:r.getElementsByClassName('fpo_overlay soloHora')[0].querySelector('div').innerText
-            
+                        date:r.getElementsByClassName('fpo_overlay soloHora')[0].querySelector('div').innerText,
+                        raisedTo:[...titleText.matchAll(/\$(\d+)/g)][0][0],
+                        raisedFrom:[...titleText.matchAll(/\$(\d+)/g)][1][0]
             
                     })
 
                 }
-
-
 
                 time = r.getElementsByClassName('fpo_overlay soloHora')[0].innerText;
                 date = r.getElementsByClassName('fpo_overlay soloHora')[0].querySelector('div').innerText;
@@ -47,10 +46,6 @@ function getData(){
                 console.log("error");
               }
     
-            
-    
-    
-        
         }
         
     }
@@ -61,9 +56,7 @@ function getData(){
 
 async function scrapeInfiniteScrollItems(
     page,
-    extractItems,
-    itemTargetCount,
-    scrollDelay = 1000,
+    getData
   ) {
     let items = [];
 
@@ -97,7 +90,7 @@ async function scrapeInfiniteScrollItems(
         previousHeight = await page.evaluate('document.body.scrollHeight');
         await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
         await page.waitForFunction(`document.body.scrollHeight > ${previousHeight}`);
-        // await page.waitFor(scrollDelay);
+        // await page.waitForTimer(1000);
       }
     } catch(e) { }
     return items;
@@ -124,7 +117,7 @@ async function scrapeInfiniteScrollItems(
 
 (async () => {
     
-  const browser = await puppeteer.launch({ executablePath: '/Users/kushalgoenka/Desktop/thefly/puppeteer/.local-chromium/mac-869685/chrome-mac/Chromium.app/Contents/MacOS/Chromium',headless: true,dumpio: false});
+  const browser = await puppeteer.launch({ executablePath: 'puppeteer/.local-chromium/mac-869685/chrome-mac/Chromium.app/Contents/MacOS/Chromium',headless: true,dumpio: false});
 // const browser = await puppeteer.launch();
   const page = await browser.newPage();
   await page.goto('https://thefly.com/news.php');
@@ -135,7 +128,7 @@ async function scrapeInfiniteScrollItems(
     // page.evaluate(() => console.log('hello', 5));
 
 
-    const items = await scrapeInfiniteScrollItems(page, getData, 100);
+    const items = await scrapeInfiniteScrollItems(page, getData);
 
     const [data1,time,date] = await page.evaluate(getData);
 
@@ -143,10 +136,15 @@ async function scrapeInfiniteScrollItems(
 
     // console.log(data1.length);
 
+    // https://stackoverflow.com/questions/35974976/json-group-by-count-output-to-key-value-pair-json-result
+
     var occurences = data1.reduce(function (r, row) {
         r[row.ticker] = ++r[row.ticker] || 1;
+        // r[row.ticker] = ++r[row.ticker];
         return r;
     }, {});
+
+    // console.log("Occurences:",occurences);
     
     var result = Object.keys(occurences).map(function (key) {
         if(occurences[key] >= 3){
@@ -157,7 +155,7 @@ async function scrapeInfiniteScrollItems(
         
     });
     
-
+    // https://stackoverflow.com/questions/24806772/how-to-skip-over-an-element-in-map
     result = result.filter(function(element){
         if(element == null){
             return false;
