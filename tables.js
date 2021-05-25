@@ -1,3 +1,8 @@
+const express = require('express'); // Adding Express
+const app = express(); // Initializing Express
+
+
+
 const puppeteer = require('puppeteer');
 const moment = require('moment-timezone');
 const { readFile, writeFile } = require('fs').promises;
@@ -231,4 +236,18 @@ const browser = await puppeteer.launch({headless: true,dumpio: false});
 
   await browser.close();
 
+  // https://dev.to/waqasabbasi/building-a-search-engine-api-with-node-express-and-puppeteer-using-google-search-4m21
+  // https://dev.to/heyshadowsmith/how-to-make-an-api-from-scraped-data-using-express-puppeteer-2n7e
+  app.get('/', function(req, res) {
+    // Sending 'Test' back to Postman
+    res.type('text/csv');
+    res.attachment('thefly.csv');
+    res.send(CSV);
+});
+
 })();
+
+// Making Express listen on port 7000
+app.listen(7000, function () {
+  console.log(`Running on port 7000.`);
+});
