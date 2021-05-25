@@ -2,7 +2,7 @@ const puppeteer = require('puppeteer');
 const moment = require('moment-timezone');
 const { readFile, writeFile } = require('fs').promises;
 
-
+// https://intoli.com/blog/scrape-infinite-scroll/
 function getData(){
     // console.log("Elements");
     // console.log('hello', 5, {foo: 'bar'});
@@ -31,8 +31,9 @@ function getData(){
                         ticker:r.getElementsByClassName('ticker fpo_overlay')[0].innerText,
                         time:r.getElementsByClassName('fpo_overlay soloHora')[0].innerText,
                         date:r.getElementsByClassName('fpo_overlay soloHora')[0].querySelector('div').innerText,
-                        raisedTo:[...titleText.matchAll(/\$(\d+)/g)][0][0],
-                        raisedFrom:[...titleText.matchAll(/\$(\d+)/g)][1][0]
+                        raisedFrom:[...titleText.matchAll(/\$(\d+)/g)][1][0],
+                        raisedTo:[...titleText.matchAll(/\$(\d+)/g)][0][0]
+                        
             
                     })
 
@@ -145,11 +146,11 @@ const browser = await puppeteer.launch({headless: true,dumpio: false});
         return r;
     }, {});
     // Test
-    // console.log("Occurences:",occurences);
+    console.log("Occurences:",occurences);
     
     var result = Object.keys(occurences).map(function (key) {
         if(occurences[key] >= 3){
-            return { Ticker: key, Count: occurences[key] };
+            return { ticker: key, Count: occurences[key] };
         } else{
             return;
         }
@@ -178,11 +179,53 @@ const browser = await puppeteer.launch({headless: true,dumpio: false});
     //     }
     // },[]);
 
-    // console.log(result);
+    console.log(result);
     // console.log(result.length);
 
-    console.log(data1);
-    const CSV = arrayToCSV(result);
+
+
+    // var combined = result.map(x => Object.assign(x, data1.find(y => y.ticker == x.ticker)));
+
+    // console.log(combined);
+
+    // var matches = data1.filter(item =>
+    //   filterParams.every(paramItem =>
+    //     item[paramItem.param] === paramItem.value));
+
+    var tickers = []
+    for(const symbol of result){
+      tickers.push(symbol.ticker);
+    }
+
+    console.log(tickers);
+
+  //   var combined = result.filter(function(element){
+  //     console.log(element.ticker);
+  //     if(element.ticker in tickers){
+  //         return true;
+  //     }
+  //     else{
+  //         return false;
+  //     }
+
+  // }).map(function(element){
+  //     return element;
+  // });
+
+  var combined = data1.filter(item => tickers.includes(item.ticker));
+
+
+    // console.log(combined);
+
+  combined = combined.map(x => Object.assign(x, result.find(y => y.ticker == x.ticker)));
+  
+
+  combined = combined.sort((a, b) => (a.ticker > b.ticker) ? 1 : -1);
+  console.log(combined);
+
+
+    // console.log(data1);
+    const CSV = arrayToCSV(combined);
   	await writeCSV("output.csv", CSV);
 
 
