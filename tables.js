@@ -143,7 +143,7 @@ async function scrapeInfiniteScrollItems(
         // r[row.ticker] = ++r[row.ticker];
         return r;
     }, {});
-
+    // Test
     // console.log("Occurences:",occurences);
     
     var result = Object.keys(occurences).map(function (key) {
