@@ -250,7 +250,6 @@ const browser = await puppeteer.launch({args: [
 
 })();
 
-// Making Express listen on port 7000
-app.listen(7000, function () {
-  console.log(`Running on port 7000.`);
-});
+// start the server listening for requests
+app.listen(process.env.PORT || 3000, 
+	() => console.log("Server is running..."));
