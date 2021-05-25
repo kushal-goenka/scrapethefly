@@ -129,8 +129,9 @@ async function scrapeInfiniteScrollItems(
       //   const browser = await puppeteer.launch({ executablePath: 'puppeteer/.local-chromium/mac-869685/chrome-mac/Chromium.app/Contents/MacOS/Chromium',headless: true,dumpio: false});
       const browser = await puppeteer.launch({args: [
           '--no-sandbox',
-          '--disable-setuid-sandbox',
-        ],headless: true,dumpio: false});
+          '--no--zygote',
+          "--single-process",
+        ],headless: true,defaultViewport: null,});
       // const browser = await puppeteer.launch();
         const page = await browser.newPage();
         await page.goto('https://thefly.com/news.php');
