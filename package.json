@@ -1,0 +1,22 @@
+{
+  "name": "thefly",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon tables"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "moment": "^2.29.1",
+    "moment-timezone": "^0.5.33",
+    "puppeteer": "^9.1.1"
+  },
+  "bin": "tables.js",
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  }
+}
