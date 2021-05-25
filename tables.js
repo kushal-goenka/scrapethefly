@@ -131,6 +131,7 @@ async function scrapeInfiniteScrollItems(
           '--no-sandbox',
           '--no--zygote',
           "--single-process",
+          "--disable-dev-shm-usage",
         ],headless: true,defaultViewport: null,});
       // const browser = await puppeteer.launch();
         const page = await browser.newPage();
