@@ -30,7 +30,7 @@ jobs:
     - run: node tables.js
 
     - name: Archive code coverage results
-            uses: actions/upload-artifact@v2
-            with:
-              name: code-coverage-report
-              path: output.csv
+      uses: actions/upload-artifact@v2
+      with:
+        name: code-coverage-report
+        path: output.csv
