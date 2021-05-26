@@ -96,7 +96,7 @@ async function scrapeInfiniteScrollItems(
         previousHeight = await page.evaluate('document.body.scrollHeight');
         await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
         await page.waitForFunction(`document.body.scrollHeight > ${previousHeight}`);
-        // await page.waitForTimer(100);
+        // await page.waitForTimer(1000);
       }
     } catch(e) { }
     return items;
@@ -119,12 +119,25 @@ async function scrapeInfiniteScrollItems(
     }
   }
 
-(async () => {
-    
-      //   const browser = await puppeteer.launch({ executablePath: 'puppeteer/.local-chromium/mac-869685/chrome-mac/Chromium.app/Contents/MacOS/Chromium',headless: true,dumpio: false});
-      const browser = await puppeteer.launch({headless: true,defaultViewport: null,});
-      // const browser = await puppeteer.launch();
-        const page = await browser.newPage();
+  app.get('/get_csv', function(req, res) {
+    // Sending 'Test' back to Postman
+    // https://stackoverflow.com/questions/63199136/sending-csv-back-with-express
+    console.log("Called the url");
+
+    (async () => {
+            //   const browser = await puppeteer.launch({ executablePath: 'puppeteer/.local-chromium/mac-869685/chrome-mac/Chromium.app/Contents/MacOS/Chromium',headless: true,dumpio: false});
+            const browser = await puppeteer.launch({args: [
+              '--no-sandbox',
+              '--no--zygote',
+              "--single-process",
+              "--disable-dev-shm-usage",
+            ],headless: true,defaultViewport: null,});
+          // const browser = await puppeteer.launch();
+            const page = await browser.newPage();
+      
+      try{
+        
+
         await page.goto('https://thefly.com/news.php');
       //   await page.screenshot({path: 'output.png'});
           
@@ -232,34 +245,32 @@ async function scrapeInfiniteScrollItems(
           await writeCSV("output.csv", CSV);
       
       
-        await browser.close();
+
       
         // https://dev.to/waqasabbasi/building-a-search-engine-api-with-node-express-and-puppeteer-using-google-search-4m21
         // https://dev.to/heyshadowsmith/how-to-make-an-api-from-scraped-data-using-express-puppeteer-2n7e
           
 
-        app.get('/', function(req, res) {
-          // Sending 'Test' back to Postman
-          // https://stackoverflow.com/questions/63199136/sending-csv-back-with-express
-          try {
-            res.type('text/csv');
-            res.attachment('thefly.csv');
-            res.send(CSV);
-            
-          } catch (error) {
-            
-          }
-        
-          
-        });
+        res.type('text/csv');
+        res.attachment('thefly.csv');
+        res.send(CSV);
+
+
+
+        } catch(e){
+          console.log(e);
+        } finally {
+          await page.close();
+          await browser.close();
+
+        }
 
 
       })();
 
 
 
-
-
+});
 
 // start the server listening for requests
 app.listen(process.env.PORT || 3000, 
