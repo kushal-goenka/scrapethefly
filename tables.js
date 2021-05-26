@@ -96,7 +96,7 @@ async function scrapeInfiniteScrollItems(
         previousHeight = await page.evaluate('document.body.scrollHeight');
         await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
         await page.waitForFunction(`document.body.scrollHeight > ${previousHeight}`);
-        await page.waitForTimer(1000);
+        // await page.waitForTimer(100);
       }
     } catch(e) { }
     return items;
@@ -119,20 +119,10 @@ async function scrapeInfiniteScrollItems(
     }
   }
 
-  app.get('/', function(req, res) {
-    // Sending 'Test' back to Postman
-    // https://stackoverflow.com/questions/63199136/sending-csv-back-with-express
-
-
-    (async () => {
+(async () => {
     
       //   const browser = await puppeteer.launch({ executablePath: 'puppeteer/.local-chromium/mac-869685/chrome-mac/Chromium.app/Contents/MacOS/Chromium',headless: true,dumpio: false});
-      const browser = await puppeteer.launch({args: [
-          '--no-sandbox',
-          '--no--zygote',
-          "--single-process",
-          "--disable-dev-shm-usage",
-        ],headless: true,defaultViewport: null,});
+      const browser = await puppeteer.launch({headless: true,defaultViewport: null,});
       // const browser = await puppeteer.launch();
         const page = await browser.newPage();
         await page.goto('https://thefly.com/news.php');
@@ -248,14 +238,25 @@ async function scrapeInfiniteScrollItems(
         // https://dev.to/heyshadowsmith/how-to-make-an-api-from-scraped-data-using-express-puppeteer-2n7e
           
 
-        res.type('text/csv');
-        res.attachment('thefly.csv');
-        res.send(CSV);
+        app.get('/', function(req, res) {
+          // Sending 'Test' back to Postman
+          // https://stackoverflow.com/questions/63199136/sending-csv-back-with-express
+          try {
+            res.type('text/csv');
+            res.attachment('thefly.csv');
+            res.send(CSV);
+            
+          } catch (error) {
+            
+          }
+        
+          
+        });
+
+
       })();
 
 
-
-});
 
 
 
