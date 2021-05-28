@@ -1,16 +1,23 @@
 const express = require('express'); // Adding Express
 const app = express(); // Initializing Express
-
-
-
 const puppeteer = require('puppeteer');
 const moment = require('moment-timezone');
 const { readFile, writeFile } = require('fs').promises;
 
+function checkScroll(){
+
+  // https://stackoverflow.com/questions/39223343/shortest-way-to-get-last-element-by-class-name-in-javascript
+  // https://stackoverflow.com/questions/35231489/get-the-last-item-from-node-list-without-using-length
+  let r = document.querySelectorAll(".news_table:nth-last-of-type(2)")[0].querySelectorAll('tr')[0];
+  let time = r.getElementsByClassName('fpo_overlay soloHora')[0].innerText;
+  let date = r.getElementsByClassName('fpo_overlay soloHora')[0].querySelector('div').innerText;
+
+
+  return [time,date];
+}
+
 // https://intoli.com/blog/scrape-infinite-scroll/
 function getData(){
-    // console.log("Elements");
-    // console.log('hello', 5, {foo: 'bar'});
 
     const data = []
 
@@ -62,7 +69,7 @@ function getData(){
 
 async function scrapeInfiniteScrollItems(
     page,
-    getData
+    checkScroll
   ) {
     let items = [];
 
@@ -71,34 +78,33 @@ async function scrapeInfiniteScrollItems(
     // var time = now;
     // console.log(now);
     var target = time.subtract(1, "days");
-    target.set({h: 4, m: 00});
+    target.set({h: 16, m: 00});
 
     dateTime = moment();
     dateTime.tz('America/New_York').format();
 
-    // console.log("Time,Target",dateTime,target);
+    console.log("Time,Target",dateTime,target);
+
+    // console.log()
 
     
     try {
       let previousHeight;
+
       while (dateTime > target) {
-        // console.log("Inside Functin");
 
-        const [data,time,date] = await page.evaluate(getData);
-        
-        // console.log("Inside Time:",date,time);
-        // console.log(date);
-        // var converted = moment.tz(date+' '+time,'America/New_York').format();
-
+        const [time,date] = await await page.evaluate(checkScroll);
         var dateTime = moment.tz(date+' '+time,'MM/DD/YYYY hh:mm','America/New_York');
-        // console.log("Moment format",dateTime);
-
         previousHeight = await page.evaluate('document.body.scrollHeight');
         await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
+        
+        // await page.evaluate('window.scrollTo(0, -document.body.scrollHeight)');
+        // await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
+        
         await page.waitForFunction(`document.body.scrollHeight > ${previousHeight}`);
-        // await page.waitForTimer(1000);
+        // await page.waitFor(1000);
       }
-    } catch(e) { }
+    } catch(e) { console.log(e);}
     return items;
   }
 
@@ -127,17 +133,11 @@ async function scrapeInfiniteScrollItems(
     (async () => {
             //   const browser = await puppeteer.launch({ executablePath: 'puppeteer/.local-chromium/mac-869685/chrome-mac/Chromium.app/Contents/MacOS/Chromium',headless: true,dumpio: false});
             const browser = await puppeteer.launch({args: [
-              '--no-sandbox',
-              '--no--zygote',
-              "--single-process",
-              "--disable-dev-shm-usage",
+              '--no-sandbox'
             ],headless: true,defaultViewport: null,});
           // const browser = await puppeteer.launch();
             const page = await browser.newPage();
-            
-            // await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36');
-
-            // await page.setViewport({width:1366,height:768});
+            page.setDefaultNavigationTimeout(0);
       
       try{
         
@@ -150,7 +150,7 @@ async function scrapeInfiniteScrollItems(
           // page.evaluate(() => console.log('hello', 5));
       
       
-          const items = await scrapeInfiniteScrollItems(page, getData);
+          const items = await scrapeInfiniteScrollItems(page, checkScroll);
       
           const [data1,time,date] = await page.evaluate(getData);
       
@@ -264,7 +264,6 @@ async function scrapeInfiniteScrollItems(
         } catch(e){
           console.log(e);
           console.log("ERROR Occurred Try Catch");
-          
         } finally {
           await page.close();
           await browser.close();
@@ -278,11 +277,28 @@ async function scrapeInfiniteScrollItems(
 
 });
 
+app.get('/test', function(req, res) {
+  res.send("Hello");
+
+})
+
 // start the server listening for requests
-app.listen(process.env.PORT || 3000, 
-  () => console.log("Server is running..."));
-  
+app.listen(process.env.PORT || 3000, () => {
+  console.log(`Example app listening at http://localhost:3000`)
+})
+
+// https://itnext.io/google-cloud-functions-node-js-and-express-aea4a2a9ba3a
 
 module.exports = {
-    app
+  app
 };
+
+
+// https://rominirani.com/using-puppeteer-in-google-cloud-functions-809a14856e14
+// gcloud functions deploy scrapethefly --runtime nodejs10 --trigger-http --entry-point app --memory=1024MB
+
+
+// VERY USEFUL
+
+
+// https://github.com/vercel/pkg/issues/204#issuecomment-378929002
