@@ -15,7 +15,7 @@
     "moment-timezone": "^0.5.33",
     "puppeteer": "^9.1.1"
   },
-  "bin": "tables2.js",
+  "bin": "index-noserver.js",
   "devDependencies": {
     "nodemon": "^2.0.7"
   },

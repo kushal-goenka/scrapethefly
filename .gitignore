@@ -2,3 +2,5 @@ node_modules
 .exe
 chromium
 *.csv
+
+thefly-*
