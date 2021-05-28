@@ -35,7 +35,10 @@ if (process.platform == 'win32') {
 }
 
 async function scrapeInfiniteScrollItems(
-  page
+  page,
+  targetHour = 16,
+  targetMinute = 00,
+  targetDaysBehind = 1
 ) {
   let items = [];
 
@@ -43,10 +46,10 @@ async function scrapeInfiniteScrollItems(
   time.tz('America/New_York').format();
   // var time = now;
   // console.log(now);
-  var target = time.subtract(1, "days");
+  var target = time.subtract(targetDaysBehind, "days");
   target.set({
-    h: 16,
-    m: 00
+    h: targetHour,
+    m: targetMinute
   });
 
   dateTime = moment();
@@ -105,13 +108,12 @@ async function writeCSV(fileName, data) {
     headless: true
   });
 
-
   // const browser = await puppeteer.launch();
   const page = await browser.newPage();
 
   try {
 
-
+    const targetHour = 16, targetMinute = 00, targetDaysBehind = 1,minOccurrences = 3;
 
     await page.goto('https://thefly.com/news.php');
 
@@ -122,20 +124,21 @@ async function writeCSV(fileName, data) {
       height: 768
     });
 
-    const items = await scrapeInfiniteScrollItems(page);
+    const items = await scrapeInfiniteScrollItems(page,targetHour,targetMinute,targetDaysBehind);
 
     const [data1, time, date] = await page.evaluate(eval.getData);
 
     // https://stackoverflow.com/questions/35974976/json-group-by-count-output-to-key-value-pair-json-result
 
+    // Count the number of occurences of a particular ticker
     var occurences = data1.reduce(function (r, row) {
       r[row.ticker] = ++r[row.ticker] || 1;
-      // r[row.ticker] = ++r[row.ticker];
       return r;
     }, {});
 
+    // Filter out the occurrences that are less than the minOccurrences number
     var result = Object.keys(occurences).map(function (key) {
-      if (occurences[key] >= 3) {
+      if (occurences[key] >= minOccurrences) {
         return {
           ticker: key,
           Count: occurences[key]
@@ -143,30 +146,32 @@ async function writeCSV(fileName, data) {
       } else {
         return;
       }
-
     });
 
     // https://stackoverflow.com/questions/24806772/how-to-skip-over-an-element-in-map
+    // Above block returns null values for dont-care tickers, we filter these out and return the ones that are not null
     result = result.filter(function (element) {
       if (element == null) {
         return false;
       } else {
         return true;
       }
-
     }).map(function (element) {
       return element;
     });
 
+    // get a list of tickers we're interested in
     var tickers = []
     for (const symbol of result) {
       tickers.push(symbol.ticker);
     }
 
+    // use the list of tickers we are intersted in to filter out the irrelevant tickers from the ORIGINAL data (Because we want other data)
     var combined = data1.filter(item => tickers.includes(item.ticker));
 
+    // Assign the number of occurrences to every data element
     combined = combined.map(x => Object.assign(x, result.find(y => y.ticker == x.ticker)));
-
+    // Sort by ticker
     combined = combined.sort((a, b) => (a.ticker > b.ticker) ? 1 : -1);
 
     console.log(combined);
