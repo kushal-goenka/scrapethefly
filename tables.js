@@ -264,6 +264,7 @@ async function scrapeInfiniteScrollItems(
         } catch(e){
           console.log(e);
           console.log("ERROR Occurred Try Catch");
+          
         } finally {
           await page.close();
           await browser.close();
