@@ -2,9 +2,9 @@
 // https://intoli.com/blog/scrape-infinite-scroll/
 
 
-module.exports = {
-    getData: function(){
-        // console.log("Elements");
+const getData = () => {
+
+    // console.log("Elements");
         // console.log('hello', 5, {foo: 'bar'});
     
         const data = []
@@ -52,7 +52,21 @@ module.exports = {
         }
     
         return [data,time,date];
-    }
-    
+
 };
 
+
+// Function to return time and date to determine when to stop scrolling down
+const checkScroll = () => {
+
+    // https://stackoverflow.com/questions/39223343/shortest-way-to-get-last-element-by-class-name-in-javascript
+    // https://stackoverflow.com/questions/35231489/get-the-last-item-from-node-list-without-using-length
+    let r = document.querySelectorAll(".news_table:nth-last-of-type(2)")[0].querySelectorAll('tr')[0];
+    let time = r.getElementsByClassName('fpo_overlay soloHora')[0].innerText;
+    let date = r.getElementsByClassName('fpo_overlay soloHora')[0].querySelector('div').innerText;
+  
+    return [time,date];
+  }
+
+module.exports.getData = getData;
+module.exports.checkScroll = checkScroll;
