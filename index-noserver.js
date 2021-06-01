@@ -3,9 +3,10 @@ const path = require('path');
 const puppeteer = require('puppeteer');
 const moment = require('moment-timezone');
 const {
-  readFile,
-  writeFile
+  writeFile,
+  appendFile
 } = require('fs').promises;
+
 
 var eval = require('./eval');
 
@@ -91,9 +92,13 @@ function arrayToCSV(data) {
   return `"${csv.join('"\n"').replace(/,/g, '","')}"`;
 }
 
-async function writeCSV(fileName, data) {
+async function writeCSV(fileName, data1,data2) {
   try {
-    await writeFile(fileName, data, 'utf8');
+    await writeFile(fileName, data1, 'utf8');
+    await appendFile(fileName, "\n", 'utf8');
+    await appendFile(fileName, "\n", 'utf8');
+    await appendFile(fileName, data2, 'utf8');
+    
   } catch (err) {
     console.log(err);
     process.exit(1);
@@ -160,6 +165,8 @@ async function writeCSV(fileName, data) {
       return element;
     });
 
+    console.log("result:",result);
+
     // get a list of tickers we're interested in
     var tickers = []
     for (const symbol of result) {
@@ -172,16 +179,38 @@ async function writeCSV(fileName, data) {
     // Assign the number of occurrences to every data element
     combined = combined.map(x => Object.assign(x, result.find(y => y.ticker == x.ticker)));
     // Sort by ticker
-    combined = combined.sort((a, b) => (a.ticker > b.ticker) ? 1 : -1);
+
+    // combined = combined.sort((a, b) => (a.ticker > b.ticker) ? 1 : -1);
+
+
+        // generic comparison function
+    cmp = function(x, y){
+      return x > y ? 1 : x < y ? -1 : 0; 
+    };
+
+    //sort by count and then by ticker symbol
+    combined.sort(function(a, b){
+      //note the minus before -cmp, for descending order
+      return cmp( 
+          [-cmp(a.Count, b.Count), cmp(a.ticker, b.ticker)], 
+          [-cmp(b.Count, a.Count), cmp(b.ticker, a.ticker)]
+      );
+    });
+
+    result.sort(function(a,b){
+        return -cmp(a.Count,b.Count)
+    });
 
     console.log(combined);
 
-    // console.log(data1);
-    const CSV = arrayToCSV(combined);
+    const summaryCSV = arrayToCSV(result);
+    const dataCSV = arrayToCSV(combined);
+    
+
     if (isPkg) {
-      await writeCSV(path.dirname(process.execPath) + "/output.csv", CSV);
+      await writeCSV(path.dirname(process.execPath) + "/output.csv", summaryCSV,dataCSV);
     } else {
-      await writeCSV("output.csv", CSV);
+      await writeCSV("output.csv", summaryCSV,dataCSV);
     }
 
   } catch (e) {
