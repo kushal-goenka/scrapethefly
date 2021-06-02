@@ -394,9 +394,10 @@ async function scrapeInfiniteScrollItems(
         const sheetsPromise = await google.sheets({ version: "v4", auth });
 
         // Update spreadsheet
-        // const spreadsheetId = "1iPK3M-PdR3aTxYW13E4ycHZr_cU73STHi6copsLbSxg";
-
-        const spreadsheetId = "1IUTqPEgEsqJ6mBb_BjRPK9npXuNW67quCZ3Fv1P-bMY";
+        const spreadsheetId = "1iPK3M-PdR3aTxYW13E4ycHZr_cU73STHi6copsLbSxg";
+        
+        // Test SpreadSheet
+        // const spreadsheetId = "1IUTqPEgEsqJ6mBb_BjRPK9npXuNW67quCZ3Fv1P-bMY";
         
         // const values = [[combined[0].title,combined[0].ticker,combined[0].Count]];
 
@@ -478,23 +479,16 @@ async function scrapeInfiniteScrollItems(
             var sheetIdFound = response.sheets[i].properties.sheetId;
             console.log(sheetIdFound)
           }
-          // if(property.properties.title==sheetName){
-          //   console.log(property.properties.title);
-          //   var sheetIdFound = property.properties.sheetId;
-          //   console.log(sheetIdFound);
-          // }
-          
         }
 
 
         await populateAndStyle(sheetsPromise,summaryCSV+"\n"+"\n"+dataCSV,spreadsheetId,sheetIdFound);
         
 
-        
-
         res.type('text/csv');
         res.attachment('thefly.csv');
         res.send(summaryCSV+"\n"+dataCSV);
+        
         } catch(e){
           console.log(e);
           console.log("ERROR Occurred Try Catch");
