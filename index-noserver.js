@@ -141,6 +141,14 @@ async function writeCSV(fileName, data1,data2) {
       return r;
     }, {});
 
+
+
+    // const res = Array.from(data1.reduce(
+    //   (m, {ticker, Count}) => m.set(ticker, (m.get(ticker) || 0) + Count), new Map
+    // ), ([ticker, Count]) => ({ticker, Count}));
+    // console.log("RES:",res);
+
+
     // Filter out the occurrences that are less than the minOccurrences number
     var result = Object.keys(occurences).map(function (key) {
       if (occurences[key] >= minOccurrences) {
@@ -165,16 +173,37 @@ async function writeCSV(fileName, data1,data2) {
       return element;
     });
 
-    console.log("result:",result);
-
+    
     // get a list of tickers we're interested in
     var tickers = []
     for (const symbol of result) {
       tickers.push(symbol.ticker);
     }
+    // console.log(result);
 
     // use the list of tickers we are intersted in to filter out the irrelevant tickers from the ORIGINAL data (Because we want other data)
     var combined = data1.filter(item => tickers.includes(item.ticker));
+
+
+    var averageValueFrom = combined.reduce(function (r, row) {  
+      r[row.ticker] = (r[row.ticker] + parseFloat(row.raisedFrom.substring(1,))) || parseFloat(row.raisedFrom.substring(1,));
+      return r;
+    }, {});
+    var averageValueTo = combined.reduce(function (r, row) {
+      r[row.ticker] = (r[row.ticker] + parseFloat(row.raisedTo.substring(1,))) || parseFloat(row.raisedTo.substring(1,));
+      return r;
+    }, {});
+
+
+    for (const symbol of result) {
+      symbol["averageFrom"] = (averageValueFrom[symbol.ticker]/symbol.Count).toFixed(2) ;
+      symbol["averageTo"] = (averageValueTo[symbol.ticker]/symbol.Count).toFixed(2) ;
+
+    }
+    // console.log("AFTER ADDING:",result);
+
+
+    // console.log(averageValueFrom);
 
     // Assign the number of occurrences to every data element
     combined = combined.map(x => Object.assign(x, result.find(y => y.ticker == x.ticker)));
@@ -201,7 +230,7 @@ async function writeCSV(fileName, data1,data2) {
         return -cmp(a.Count,b.Count)
     });
 
-    console.log(combined);
+    // console.log(combined);
 
     const summaryCSV = arrayToCSV(result);
     const dataCSV = arrayToCSV(combined);
