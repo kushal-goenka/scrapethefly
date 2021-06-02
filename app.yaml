@@ -1,3 +1,5 @@
 runtime: nodejs12
 
 instance_class: F4_1G
+automatic_scaling:
+  max_concurrent_requests: 1
