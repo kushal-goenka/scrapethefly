@@ -68,45 +68,54 @@ function getData(){
 
 
 async function scrapeInfiniteScrollItems(
-    page,
-    checkScroll
-  ) {
-    let items = [];
+  page,
+  targetHour = 16,
+  targetMinute = 00,
+  targetDaysBehind = 1
+) {
+  let items = [];
 
-    var time = moment();
-    time.tz('America/New_York').format();
-    // var time = now;
-    // console.log(now);
-    var target = time.subtract(1, "days");
-    target.set({h: 16, m: 00});
+  var time = moment();
+  time.tz('America/New_York').format();
+  // var time = now;
+  // console.log(now);
+  var target = time.subtract(targetDaysBehind, "days");
+  target.set({
+    h: targetHour,
+    m: targetMinute
+  });
 
-    dateTime = moment();
-    dateTime.tz('America/New_York').format();
+  dateTime = moment();
+  dateTime.tz('America/New_York').format();
 
-    console.log("Time,Target",dateTime,target);
+  console.log("Current Time: ", dateTime);
+  console.log("Target Time: ", target)
 
-    // console.log()
 
-    
-    try {
-      let previousHeight;
+  try {
+    let previousHeight;
+    while (dateTime > target) {
+      // console.log("Inside Functin");
 
-      while (dateTime > target) {
+      const [time, date] = await page.evaluate(checkScroll);
 
-        const [time,date] = await page.evaluate(checkScroll);
-        var dateTime = moment.tz(date+' '+time,'MM/DD/YYYY hh:mm','America/New_York');
-        previousHeight = await page.evaluate('document.body.scrollHeight');
-        await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
-        console.log("Time Date",time,date);
-        // await page.evaluate('window.scrollTo(0, -document.body.scrollHeight)');
-        // await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
-        
-        await page.waitForFunction(`document.body.scrollHeight > ${previousHeight}`,{timeout:90000});
-        // await page.waitFor(1000);
-      }
-    } catch(e) { console.log(e);}
-    return items;
+      console.log("Current Latest Time Reached:", date, time);
+
+      var dateTime = moment.tz(date + ' ' + time, 'MM/DD/YYYY hh:mm', 'America/New_York');
+
+      previousHeight = await page.evaluate('document.body.scrollHeight');
+      await page.evaluate('window.scrollTo(0, -document.body.scrollHeight)');
+      await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
+      await page.waitForFunction(`document.body.scrollHeight > ${previousHeight}`);
+
+    }
+  } catch (e) {
+    console.log("Failed While Trying to Infinite Scroll");
+    console.log(e);
   }
+
+  return items;
+}
 
 
   function arrayToCSV (data) {
@@ -154,122 +163,128 @@ async function scrapeInfiniteScrollItems(
       try{
         
 
-        await page.goto('https://thefly.com/news.php',{timeout: 0});
-      //   await page.screenshot({path: 'output.png'});
-          
-          // console.log("HERE");
-      
-          // page.evaluate(() => console.log('hello', 5));
-      
-      
-          const items = await scrapeInfiniteScrollItems(page, checkScroll);
-      
-          const [data1,time,date] = await page.evaluate(getData);
-      
-          // console.log(time,date)
-      
-          // console.log(data1.length);
-      
-          // https://stackoverflow.com/questions/35974976/json-group-by-count-output-to-key-value-pair-json-result
-      
-          var occurences = data1.reduce(function (r, row) {
-              r[row.ticker] = ++r[row.ticker] || 1;
-              // r[row.ticker] = ++r[row.ticker];
-              return r;
-          }, {});
-          // Test
-          console.log("Occurences:",occurences);
-          
-          var result = Object.keys(occurences).map(function (key) {
-              if(occurences[key] >= 3){
-                  return { ticker: key, Count: occurences[key] };
-              } else{
-                  return;
-              }
-              
-          });
-          
-          // https://stackoverflow.com/questions/24806772/how-to-skip-over-an-element-in-map
-          result = result.filter(function(element){
-              if(element == null){
-                  return false;
-              }
-              else{
-                  return true;
-              }
-      
-          }).map(function(element){
-              return element;
-          });
-      
-          
-          // var result = Object.keys(occurences).reduce(function(key) {
-          //     if(occurences[key] >= 3){
-          //         return { key: key, value: occurences[key] };
-          //     } else{
-          //         return;
-          //     }
-          // },[]);
-      
-          console.log(result);
-          // console.log(result.length);
-      
-      
-      
-          // var combined = result.map(x => Object.assign(x, data1.find(y => y.ticker == x.ticker)));
-      
-          // console.log(combined);
-      
-          // var matches = data1.filter(item =>
-          //   filterParams.every(paramItem =>
-          //     item[paramItem.param] === paramItem.value));
-      
-          var tickers = []
-          for(const symbol of result){
-            tickers.push(symbol.ticker);
-          }
-      
-          console.log(tickers);
-      
-        //   var combined = result.filter(function(element){
-        //     console.log(element.ticker);
-        //     if(element.ticker in tickers){
-        //         return true;
-        //     }
-        //     else{
-        //         return false;
-        //     }
-      
-        // }).map(function(element){
-        //     return element;
-        // });
-      
-        var combined = data1.filter(item => tickers.includes(item.ticker));
-      
-      
-          // console.log(combined);
-      
-        combined = combined.map(x => Object.assign(x, result.find(y => y.ticker == x.ticker)));
-        
-      
-        combined = combined.sort((a, b) => (a.ticker > b.ticker) ? 1 : -1);
-        console.log(combined);
-      
-      
-          // console.log(data1);
-          const CSV = arrayToCSV(combined);
-          // await writeCSV("output.csv", CSV);
-      
-      
+        const targetHour = 16, targetMinute = 00, targetDaysBehind = 1,minOccurrences = 3;
 
-      
-        // https://dev.to/waqasabbasi/building-a-search-engine-api-with-node-express-and-puppeteer-using-google-search-4m21
-        // https://dev.to/heyshadowsmith/how-to-make-an-api-from-scraped-data-using-express-puppeteer-2n7e
-          
+        await page.goto('https://thefly.com/news.php',{timeout:0});
+    
+        await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36');
+    
+        await page.setViewport({
+          width: 1366,
+          height: 768
+        });
+    
+        const items = await scrapeInfiniteScrollItems(page,targetHour,targetMinute,targetDaysBehind);
+    
+        const [data1, time, date] = await page.evaluate(getData);
+    
+        // https://stackoverflow.com/questions/35974976/json-group-by-count-output-to-key-value-pair-json-result
+    
+        // Count the number of occurences of a particular ticker
+        var occurences = data1.reduce(function (r, row) {
+          r[row.ticker] = ++r[row.ticker] || 1;
+          return r;
+        }, {});
+    
+    
+    
+        // const res = Array.from(data1.reduce(
+        //   (m, {ticker, Count}) => m.set(ticker, (m.get(ticker) || 0) + Count), new Map
+        // ), ([ticker, Count]) => ({ticker, Count}));
+        // console.log("RES:",res);
+    
+    
+        // Filter out the occurrences that are less than the minOccurrences number
+        var result = Object.keys(occurences).map(function (key) {
+          if (occurences[key] >= minOccurrences) {
+            return {
+              ticker: key,
+              Count: occurences[key]
+            };
+          } else {
+            return;
+          }
+        });
+    
+        // https://stackoverflow.com/questions/24806772/how-to-skip-over-an-element-in-map
+        // Above block returns null values for dont-care tickers, we filter these out and return the ones that are not null
+        result = result.filter(function (element) {
+          if (element == null) {
+            return false;
+          } else {
+            return true;
+          }
+        }).map(function (element) {
+          return element;
+        });
+    
+        
+        // get a list of tickers we're interested in
+        var tickers = []
+        for (const symbol of result) {
+          tickers.push(symbol.ticker);
+        }
+        // console.log(result);
+    
+        // use the list of tickers we are intersted in to filter out the irrelevant tickers from the ORIGINAL data (Because we want other data)
+        var combined = data1.filter(item => tickers.includes(item.ticker));
+    
+    
+        var averageValueFrom = combined.reduce(function (r, row) {  
+          r[row.ticker] = (r[row.ticker] + parseFloat(row.raisedFrom.substring(1,))) || parseFloat(row.raisedFrom.substring(1,));
+          return r;
+        }, {});
+        var averageValueTo = combined.reduce(function (r, row) {
+          r[row.ticker] = (r[row.ticker] + parseFloat(row.raisedTo.substring(1,))) || parseFloat(row.raisedTo.substring(1,));
+          return r;
+        }, {});
+    
+    
+        for (const symbol of result) {
+          symbol["averageFrom"] = (averageValueFrom[symbol.ticker]/symbol.Count).toFixed(2) ;
+          symbol["averageTo"] = (averageValueTo[symbol.ticker]/symbol.Count).toFixed(2) ;
+    
+        }
+        // console.log("AFTER ADDING:",result);
+    
+    
+        // console.log(averageValueFrom);
+    
+        // Assign the number of occurrences to every data element
+        combined = combined.map(x => Object.assign(x, result.find(y => y.ticker == x.ticker)));
+        // Sort by ticker
+    
+        // combined = combined.sort((a, b) => (a.ticker > b.ticker) ? 1 : -1);
+    
+    
+            // generic comparison function
+        cmp = function(x, y){
+          return x > y ? 1 : x < y ? -1 : 0; 
+        };
+    
+        //sort by count and then by ticker symbol
+        combined.sort(function(a, b){
+          //note the minus before -cmp, for descending order
+          return cmp( 
+              [-cmp(a.Count, b.Count), cmp(a.ticker, b.ticker)], 
+              [-cmp(b.Count, a.Count), cmp(b.ticker, a.ticker)]
+          );
+        });
+    
+        result.sort(function(a,b){
+            return -cmp(a.Count,b.Count)
+        });
+    
+        // console.log(combined);
+    
+        const summaryCSV = arrayToCSV(result);
+        const dataCSV = arrayToCSV(combined);
+        
+    
 
         res.type('text/csv');
         res.attachment('thefly.csv');
-        res.send(CSV);
+        res.send(summaryCSV+"\n"+dataCSV);
 
 
 
