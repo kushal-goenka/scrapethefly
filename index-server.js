@@ -93,15 +93,15 @@ async function scrapeInfiniteScrollItems(
 
       while (dateTime > target) {
 
-        const [time,date] = await await page.evaluate(checkScroll);
+        const [time,date] = await page.evaluate(checkScroll);
         var dateTime = moment.tz(date+' '+time,'MM/DD/YYYY hh:mm','America/New_York');
         previousHeight = await page.evaluate('document.body.scrollHeight');
         await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
-        
+        console.log("Time Date",time,date);
         // await page.evaluate('window.scrollTo(0, -document.body.scrollHeight)');
         // await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
         
-        await page.waitForFunction(`document.body.scrollHeight > ${previousHeight}`);
+        await page.waitForFunction(`document.body.scrollHeight > ${previousHeight}`,{timeout:90000});
         // await page.waitFor(1000);
       }
     } catch(e) { console.log(e);}
@@ -132,17 +132,29 @@ async function scrapeInfiniteScrollItems(
 
     (async () => {
             //   const browser = await puppeteer.launch({ executablePath: 'puppeteer/.local-chromium/mac-869685/chrome-mac/Chromium.app/Contents/MacOS/Chromium',headless: true,dumpio: false});
-            const browser = await puppeteer.launch({args: [
-              '--no-sandbox'
-            ],headless: true,defaultViewport: null,});
+            // const browser = await puppeteer.launch({args: [
+            //   '--no-sandbox'
+            // ],headless: true,defaultViewport: null,});
+
+
+            const browser = await puppeteer.launch({args: ["--disable-gpu",
+            "--disable-dev-shm-usage",
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--no-first-run",
+            "--no-zygote",
+            "--single-process",
+            ],headless: true, timeout: 90000,});
+
+
           // const browser = await puppeteer.launch();
             const page = await browser.newPage();
-            page.setDefaultNavigationTimeout(0);
+            // page.setDefaultNavigationTimeout(0);
       
       try{
         
 
-        await page.goto('https://thefly.com/news.php');
+        await page.goto('https://thefly.com/news.php',{timeout: 0});
       //   await page.screenshot({path: 'output.png'});
           
           // console.log("HERE");
@@ -246,7 +258,7 @@ async function scrapeInfiniteScrollItems(
       
           // console.log(data1);
           const CSV = arrayToCSV(combined);
-          await writeCSV("output.csv", CSV);
+          // await writeCSV("output.csv", CSV);
       
       
 
