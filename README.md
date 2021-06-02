@@ -22,3 +22,10 @@ Instructions to get started:
 
     pkg .  --> to package into executable
 
+
+
+
+Google App Engine Deploy:
+
+gcloud app deploy;gcloud app logs tail -s default   
+

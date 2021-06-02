@@ -394,25 +394,37 @@ async function scrapeInfiniteScrollItems(
         const sheetsPromise = await google.sheets({ version: "v4", auth });
 
         // Update spreadsheet
-        const spreadsheetId = "1iPK3M-PdR3aTxYW13E4ycHZr_cU73STHi6copsLbSxg";
-        const sheetName = "Sheet1";
+        // const spreadsheetId = "1iPK3M-PdR3aTxYW13E4ycHZr_cU73STHi6copsLbSxg";
+
+        const spreadsheetId = "1IUTqPEgEsqJ6mBb_BjRPK9npXuNW67quCZ3Fv1P-bMY";
         
         // const values = [[combined[0].title,combined[0].ticker,combined[0].Count]];
 
 
         // await sheets.writeToSheet(spreadsheetId, 'abcd', values, 0);
 
-        // res.send("Success");
+
+        var sheetName = moment();
+        sheetName = sheetName.tz('America/New_York').format("MMM Do YY");
+        console.log(sheetName);
+
+        try {
+          await addEmptySheet(sheetsPromise,spreadsheetId,sheetName);
+        } catch (error) {
+          console.log(error);
+        }finally{
+
+          // res.send("Success");
         // https://stackoverflow.com/questions/44620930/invalid-value-at-requests0-delete-dimension-range-sheet-id-type-int32
         // https://developers.google.com/sheets/api/guides/concepts#spreadsheet_id
 
         // https://codelabs.developers.google.com/codelabs/cloud-function2sheet#5
-        const request = {
+        var request = {
           // The ID of the spreadsheet to update.
           spreadsheetId: spreadsheetId,  // TODO: Update placeholder value.
       
           // The A1 notation of the values to clear.
-          range: 'A:K',  // TODO: Update placeholder value.
+          range: `${sheetName}!A:K`,  // TODO: Update placeholder value.
       
           resource: {
             // TODO: Add desired properties to the request body.
@@ -420,6 +432,7 @@ async function scrapeInfiniteScrollItems(
       
           auth: auth,
         };
+        
         // https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/clear?apix_params=%7B%22spreadsheetId%22%3A%221iPK3M-PdR3aTxYW13E4ycHZr_cU73STHi6copsLbSxg%22%2C%22range%22%3A%22A%3AK%22%2C%22resource%22%3A%7B%7D%7D
         try {
           const response = (await sheetsPromise.spreadsheets.values.clear(request)).data;
@@ -429,12 +442,55 @@ async function scrapeInfiniteScrollItems(
           console.error(err);
         }
 
+        }
 
-        await populateAndStyle(sheetsPromise,summaryCSV+"\n"+dataCSV,spreadsheetId,0);
         
-        // dateTime = moment();
-        // dateTime.tz('America/New_York').format();
-        // await addEmptySheet(sheetsPromise,spreadsheetId,dateTime);
+        // Get Sheet Details
+
+        request = {
+          // The spreadsheet to request.
+          spreadsheetId: spreadsheetId,  // TODO: Update placeholder value.
+      
+          // The ranges to retrieve from the spreadsheet.
+          ranges: [],  // TODO: Update placeholder value.
+      
+          // True if grid data should be returned.
+          // This parameter is ignored if a field mask was set in the request.
+          includeGridData: false,  // TODO: Update placeholder value.
+          fields:"sheets.properties",
+          auth: auth,
+        };
+      
+        try {
+          var response = (await sheetsPromise.spreadsheets.get(request)).data;
+          // TODO: Change code below to process the `response` object:
+          
+          console.log(JSON.stringify(response, null, 2));
+        } catch (err) {
+          console.error(err);
+        }
+
+        // console.log(response.sheets[0].properties.title);
+        
+        for(let i in response.sheets){
+          console.log(response.sheets[i].properties.title);
+          if(response.sheets[i].properties.title==sheetName){
+            var sheetIdFound = response.sheets[i].properties.sheetId;
+            console.log(sheetIdFound)
+          }
+          // if(property.properties.title==sheetName){
+          //   console.log(property.properties.title);
+          //   var sheetIdFound = property.properties.sheetId;
+          //   console.log(sheetIdFound);
+          // }
+          
+        }
+
+
+        await populateAndStyle(sheetsPromise,summaryCSV+"\n"+"\n"+dataCSV,spreadsheetId,sheetIdFound);
+        
+
+        
 
         res.type('text/csv');
         res.attachment('thefly.csv');
