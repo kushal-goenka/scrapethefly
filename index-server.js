@@ -3,6 +3,102 @@ const app = express(); // Initializing Express
 const puppeteer = require('puppeteer');
 const moment = require('moment-timezone');
 const { readFile, writeFile } = require('fs').promises;
+// Include custom modules
+const sheets = require("./modules/sheets.module");
+const fs = require("fs");
+const google = require("googleapis").google;
+
+
+// https://codelabs.developers.google.com/codelabs/cloud-function2sheet#6
+function addEmptySheet(sheetsAPI, spreadSheetId,sheetName) {
+  return new Promise((resolve, reject) => {
+    const emptySheetParams = {
+      spreadsheetId: spreadSheetId,
+      resource: {
+        requests: [
+          {
+            addSheet: {
+              properties: {
+                title: sheetName,
+                index: 1,
+                gridProperties: {
+                  rowCount: 2000,
+                  columnCount: 26,
+                  frozenRowCount: 1
+                }
+              }
+            }
+          }
+        ]
+      }
+    };
+    sheetsAPI.spreadsheets.batchUpdate( emptySheetParams, function(err, response) {
+        if (err) {
+          reject("The Sheets API returned an error: " + err);
+        } else {
+          const sheetId = response.data.replies[0].addSheet.properties.sheetId;
+          console.log("Created empty sheet: " + sheetId);
+          resolve(sheetId);
+        }
+      }
+    );
+  });
+}
+
+function populateAndStyle(sheetsAPI, theData, spreadSheetId,sheetId) {
+  return new Promise((resolve, reject) => {
+    // Using 'batchUpdate' allows for multiple 'requests' to be sent in a single batch.
+    // Populate the sheet referenced by its ID with the data received (a CSV string)
+    // Style: set first row font size to 11 and to Bold. Exercise left for the reader: resize columns
+    const dataAndStyle = {
+      spreadsheetId: spreadSheetId,
+      resource: {
+        requests: [
+          {
+            pasteData: {
+              coordinate: {
+                sheetId: sheetId,
+                rowIndex: 0,
+                columnIndex: 0
+              },
+              data: theData,
+              delimiter: ","
+            }
+          },
+          {
+            repeatCell: {
+              range: {
+                sheetId: sheetId,
+                startRowIndex: 0,
+                endRowIndex: 1
+              },
+              cell: {
+                userEnteredFormat: {
+                  textFormat: {
+                    fontSize: 11,
+                    bold: true
+                  }
+                }
+              },
+              fields: "userEnteredFormat(textFormat)"
+            }
+          }       
+        ]
+      }
+    };
+        
+    sheetsAPI.spreadsheets.batchUpdate(dataAndStyle, function(err, response) {
+      if (err) {
+        reject("The Sheets API returned an error: " + err);
+      } else {
+        console.log(sheetId + " sheet populated with " + theData.length + " rows and column style set.");
+        resolve();
+      }
+    });    
+  });
+}
+
+
 
 function checkScroll(){
 
@@ -281,13 +377,68 @@ async function scrapeInfiniteScrollItems(
         const dataCSV = arrayToCSV(combined);
         
     
+        console.log(combined);
+
+
+
+         // Auth with google
+        // await sheets.auth();
+
+
+        const key = JSON.parse(fs.readFileSync("./keys/key.json").toString());
+        // Auth using the key
+        const auth = await google.auth.fromJSON(key);
+        // Add read / write spreadsheets scope to our auth client
+        auth.scopes = ["https://www.googleapis.com/auth/spreadsheets"];
+        // Create an instance of sheets to a scoped variable
+        const sheetsPromise = await google.sheets({ version: "v4", auth });
+
+        // Update spreadsheet
+        const spreadsheetId = "1iPK3M-PdR3aTxYW13E4ycHZr_cU73STHi6copsLbSxg";
+        const sheetName = "Sheet1";
+        
+        // const values = [[combined[0].title,combined[0].ticker,combined[0].Count]];
+
+
+        // await sheets.writeToSheet(spreadsheetId, 'abcd', values, 0);
+
+        // res.send("Success");
+        // https://stackoverflow.com/questions/44620930/invalid-value-at-requests0-delete-dimension-range-sheet-id-type-int32
+        // https://developers.google.com/sheets/api/guides/concepts#spreadsheet_id
+
+        // https://codelabs.developers.google.com/codelabs/cloud-function2sheet#5
+        const request = {
+          // The ID of the spreadsheet to update.
+          spreadsheetId: spreadsheetId,  // TODO: Update placeholder value.
+      
+          // The A1 notation of the values to clear.
+          range: 'A:K',  // TODO: Update placeholder value.
+      
+          resource: {
+            // TODO: Add desired properties to the request body.
+          },
+      
+          auth: auth,
+        };
+        // https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/clear?apix_params=%7B%22spreadsheetId%22%3A%221iPK3M-PdR3aTxYW13E4ycHZr_cU73STHi6copsLbSxg%22%2C%22range%22%3A%22A%3AK%22%2C%22resource%22%3A%7B%7D%7D
+        try {
+          const response = (await sheetsPromise.spreadsheets.values.clear(request)).data;
+          // TODO: Change code below to process the `response` object:
+          console.log(JSON.stringify(response, null, 2));
+        } catch (err) {
+          console.error(err);
+        }
+
+
+        await populateAndStyle(sheetsPromise,summaryCSV+"\n"+dataCSV,spreadsheetId,0);
+        
+        // dateTime = moment();
+        // dateTime.tz('America/New_York').format();
+        // await addEmptySheet(sheetsPromise,spreadsheetId,dateTime);
 
         res.type('text/csv');
         res.attachment('thefly.csv');
         res.send(summaryCSV+"\n"+dataCSV);
-
-
-
         } catch(e){
           console.log(e);
           console.log("ERROR Occurred Try Catch");
