@@ -102,11 +102,21 @@ function populateAndStyle(sheetsAPI, theData, spreadSheetId,sheetId) {
 
 function checkScroll(){
 
+  
   // https://stackoverflow.com/questions/39223343/shortest-way-to-get-last-element-by-class-name-in-javascript
   // https://stackoverflow.com/questions/35231489/get-the-last-item-from-node-list-without-using-length
-  let r = document.querySelectorAll(".news_table:nth-last-of-type(2)")[0].querySelectorAll('tr')[0];
-  let time = r.getElementsByClassName('fpo_overlay soloHora')[0].innerText;
-  let date = r.getElementsByClassName('fpo_overlay soloHora')[0].querySelector('div').innerText;
+  try{
+    let r = document.querySelectorAll(".news_table:nth-last-of-type(2)")[0].querySelectorAll('tr')[0];
+    let time = r.getElementsByClassName('fpo_overlay soloHora')[0].innerText;
+    let date = r.getElementsByClassName('fpo_overlay soloHora')[0].querySelector('div').innerText;
+  
+  }catch(e){
+    console.log("Error While trying to scroll:",e);
+  }finally{
+    r = document.querySelectorAll(".news_table:nth-last-of-type(3)")[0].querySelectorAll('tr')[0];
+    time = r.getElementsByClassName('fpo_overlay soloHora')[0].innerText;
+    date = r.getElementsByClassName('fpo_overlay soloHora')[0].querySelector('div').innerText;
+  }
 
 
   return [time,date];
@@ -371,10 +381,13 @@ async function scrapeInfiniteScrollItems(
             return -cmp(a.Count,b.Count)
         });
     
-        // console.log(combined);
-    
-        const summaryCSV = arrayToCSV(result);
-        const dataCSV = arrayToCSV(combined);
+        console.log(combined);
+        
+        if(combined.length > 0 ){
+          const summaryCSV = arrayToCSV(result);
+          const dataCSV = arrayToCSV(combined);
+        
+        }
         
     
         console.log(combined);
@@ -482,13 +495,16 @@ async function scrapeInfiniteScrollItems(
         }
 
 
-        await populateAndStyle(sheetsPromise,summaryCSV+"\n"+"\n"+dataCSV,spreadsheetId,sheetIdFound);
-        
-
+        if(combined.length > 0 ){
+          await populateAndStyle(sheetsPromise,summaryCSV+"\n"+"\n"+dataCSV,spreadsheetId,sheetIdFound);
         res.type('text/csv');
         res.attachment('thefly.csv');
         res.send(summaryCSV+"\n"+dataCSV);
-        
+        }else{
+          await populateAndStyle(sheetsPromise,"Not Enough Tickers with Price Targets increased > 3 times",spreadsheetId,sheetIdFound);
+          res.type('html');
+          res.send('Error Occurred While Processing No Results');
+        }
         } catch(e){
           console.log(e);
           console.log("ERROR Occurred Try Catch");
