@@ -7,7 +7,7 @@ const { readFile, writeFile } = require('fs').promises;
 const sheets = require("./modules/sheets.module");
 const fs = require("fs");
 const google = require("googleapis").google;
-
+var resultText = "";
 
 // https://codelabs.developers.google.com/codelabs/cloud-function2sheet#6
 function addEmptySheet(sheetsAPI, spreadSheetId,sheetName) {
@@ -105,18 +105,18 @@ function checkScroll(){
   
   // https://stackoverflow.com/questions/39223343/shortest-way-to-get-last-element-by-class-name-in-javascript
   // https://stackoverflow.com/questions/35231489/get-the-last-item-from-node-list-without-using-length
-  try{
+  // try{
     let r = document.querySelectorAll(".news_table:nth-last-of-type(2)")[0].querySelectorAll('tr')[0];
     let time = r.getElementsByClassName('fpo_overlay soloHora')[0].innerText;
     let date = r.getElementsByClassName('fpo_overlay soloHora')[0].querySelector('div').innerText;
   
-  }catch(e){
-    console.log("Error While trying to scroll:",e);
-  }finally{
-    r = document.querySelectorAll(".news_table:nth-last-of-type(3)")[0].querySelectorAll('tr')[0];
-    time = r.getElementsByClassName('fpo_overlay soloHora')[0].innerText;
-    date = r.getElementsByClassName('fpo_overlay soloHora')[0].querySelector('div').innerText;
-  }
+  // }catch(e){
+  //   console.log("Error While trying to scroll:",e);
+  // }finally{
+  //   r = document.querySelectorAll(".news_table:nth-last-of-type(3)")[0].querySelectorAll('tr')[0];
+  //   time = r.getElementsByClassName('fpo_overlay soloHora')[0].innerText;
+  //   date = r.getElementsByClassName('fpo_overlay soloHora')[0].querySelector('div').innerText;
+  // }
 
 
   return [time,date];
@@ -245,6 +245,8 @@ async function scrapeInfiniteScrollItems(
     // https://stackoverflow.com/questions/63199136/sending-csv-back-with-express
     console.log("Called the url");
 
+    
+
     (async () => {
             //   const browser = await puppeteer.launch({ executablePath: 'puppeteer/.local-chromium/mac-869685/chrome-mac/Chromium.app/Contents/MacOS/Chromium',headless: true,dumpio: false});
             // const browser = await puppeteer.launch({args: [
@@ -297,7 +299,7 @@ async function scrapeInfiniteScrollItems(
         // const res = Array.from(data1.reduce(
         //   (m, {ticker, Count}) => m.set(ticker, (m.get(ticker) || 0) + Count), new Map
         // ), ([ticker, Count]) => ({ticker, Count}));
-        // console.log("RES:",res);
+        console.log("RES:",occurences);
     
     
         // Filter out the occurrences that are less than the minOccurrences number
@@ -311,7 +313,9 @@ async function scrapeInfiniteScrollItems(
             return;
           }
         });
-    
+        
+        
+
         // https://stackoverflow.com/questions/24806772/how-to-skip-over-an-element-in-map
         // Above block returns null values for dont-care tickers, we filter these out and return the ones that are not null
         result = result.filter(function (element) {
@@ -323,7 +327,13 @@ async function scrapeInfiniteScrollItems(
         }).map(function (element) {
           return element;
         });
-    
+        
+        console.log("Result:",result.length);
+        
+        if(result.length==0){
+          // console.log("SHOULD HERE");
+          resultText = "Not Enough Tickers with Price Targets increased > 3 times";
+        }
         
         // get a list of tickers we're interested in
         var tickers = []
@@ -384,8 +394,8 @@ async function scrapeInfiniteScrollItems(
         console.log(combined);
         
         if(combined.length > 0 ){
-          const summaryCSV = arrayToCSV(result);
-          const dataCSV = arrayToCSV(combined);
+          var summaryCSV = arrayToCSV(result);
+          var dataCSV = arrayToCSV(combined);
         
         }
         
@@ -494,16 +504,16 @@ async function scrapeInfiniteScrollItems(
           }
         }
 
-
+        
         if(combined.length > 0 ){
           await populateAndStyle(sheetsPromise,summaryCSV+"\n"+"\n"+dataCSV,spreadsheetId,sheetIdFound);
         res.type('text/csv');
         res.attachment('thefly.csv');
         res.send(summaryCSV+"\n"+dataCSV);
         }else{
-          await populateAndStyle(sheetsPromise,"Not Enough Tickers with Price Targets increased > 3 times",spreadsheetId,sheetIdFound);
+          await populateAndStyle(sheetsPromise,resultText,spreadsheetId,sheetIdFound);
           res.type('html');
-          res.send('Error Occurred While Processing No Results');
+          res.send(resultText);
         }
         } catch(e){
           console.log(e);
