@@ -105,18 +105,18 @@ function checkScroll(){
   
   // https://stackoverflow.com/questions/39223343/shortest-way-to-get-last-element-by-class-name-in-javascript
   // https://stackoverflow.com/questions/35231489/get-the-last-item-from-node-list-without-using-length
-  try{
-    let r = document.querySelectorAll(".news_table:nth-last-of-type(2)")[0].querySelectorAll('tr')[0];
-    let time = r.getElementsByClassName('fpo_overlay soloHora')[0].innerText;
-    let date = r.getElementsByClassName('fpo_overlay soloHora')[0].querySelector('div').innerText;
+  // try{
+  //   let r = document.querySelectorAll(".news_table:nth-last-of-type(2)")[0].querySelectorAll('tr')[0];
+  //   let time = r.getElementsByClassName('fpo_overlay soloHora')[0].innerText;
+  //   let date = r.getElementsByClassName('fpo_overlay soloHora')[0].querySelector('div').innerText;
   
-  }catch(e){
-    console.log("Error While trying to scroll:",e);
-  }finally{
-    r = document.querySelectorAll(".news_table:nth-last-of-type(3)")[0].querySelectorAll('tr')[0];
+  // }catch(e){
+  //   console.log("Error While trying to scroll:",e);
+  // }finally{
+    r = document.querySelectorAll(".news_table:nth-last-of-type(2)")[0].querySelectorAll('tr')[0];
     time = r.getElementsByClassName('fpo_overlay soloHora')[0].innerText;
     date = r.getElementsByClassName('fpo_overlay soloHora')[0].querySelector('div').innerText;
-  }
+  // }
 
 
   return [time,date];
