@@ -8,6 +8,42 @@ const sheets = require("./modules/sheets.module");
 const fs = require("fs");
 const google = require("googleapis").google;
 var resultText = "";
+var firstCell = "";
+
+
+function checkContent(sheetsAPI,spreadsheetId,sheetName){
+    sheetsAPI.spreadsheets.values.get({
+   
+     spreadsheetId:spreadsheetId,
+     range:`${sheetName}!A:K`,
+   },(err,res)=>{
+
+
+
+     console.log("DATA READ:",res.data.values[0][0]);
+
+     firstCell = res.data.values[0][0];
+
+    return firstCell;
+
+     // const rows = res.data.values;
+     // if (rows.length) {
+     //   console.log('Name, Major:');
+     //   // Print columns A and E, which correspond to indices 0 and 4.
+     //   rows.map((row) => {
+     //     console.log(`${row[0]}, ${row[4]}`);
+     //   });
+     // } else {
+     //   console.log('No data found.');
+     // }
+
+   });
+ 
+  
+}
+
+
+
 
 // https://codelabs.developers.google.com/codelabs/cloud-function2sheet#6
 function addEmptySheet(sheetsAPI, spreadSheetId,sheetName) {
@@ -113,7 +149,7 @@ function checkScroll(){
   // }catch(e){
   //   console.log("Error While trying to scroll:",e);
   // }finally{
-    r = document.querySelectorAll(".news_table:nth-last-of-type(2)")[0].querySelectorAll('tr')[0];
+    r = document.querySelectorAll(".news_table:nth-last-of-type(3)")[0].querySelectorAll('tr')[0];
     time = r.getElementsByClassName('fpo_overlay soloHora')[0].innerText;
     date = r.getElementsByClassName('fpo_overlay soloHora')[0].querySelector('div').innerText;
   // }
@@ -462,13 +498,45 @@ async function scrapeInfiniteScrollItems(
           auth: auth,
         };
         
-        // https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/clear?apix_params=%7B%22spreadsheetId%22%3A%221iPK3M-PdR3aTxYW13E4ycHZr_cU73STHi6copsLbSxg%22%2C%22range%22%3A%22A%3AK%22%2C%22resource%22%3A%7B%7D%7D
-        try {
-          const response = (await sheetsPromise.spreadsheets.values.clear(request)).data;
+        // try{
+        //   firstCell = await checkContent(sheetsPromise,spreadsheetId,sheetName);
+        // } catch(error){
+        //   console.log("Error",error);
+        // }
+        
+         var requestData = {
+          spreadsheetId:spreadsheetId,
+          range:`${sheetName}!A:K`,
+          auth: auth,
+         }
+
+         try {
+          const res = (await sheetsPromise.spreadsheets.values.get(requestData)).data;
           // TODO: Change code below to process the `response` object:
-          console.log(JSON.stringify(response, null, 2));
+          console.log("HEREEE IS THE RESPONSE",JSON.stringify(res, null, 2));
+          firstCell = res.values[0][0];
+
         } catch (err) {
           console.error(err);
+        }
+      
+
+
+        // https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/clear?apix_params=%7B%22spreadsheetId%22%3A%221iPK3M-PdR3aTxYW13E4ycHZr_cU73STHi6copsLbSxg%22%2C%22range%22%3A%22A%3AK%22%2C%22resource%22%3A%7B%7D%7D
+        
+        if(firstCell!="ticker"){
+
+
+          console.log("did not detect ticker",firstCell);
+          try {
+            const response = (await sheetsPromise.spreadsheets.values.clear(request)).data;
+            // TODO: Change code below to process the `response` object:
+            console.log(JSON.stringify(response, null, 2));
+          } catch (err) {
+            console.error(err);
+          }
+        }else{
+          console.log("YAY Detected ticker");
         }
 
         }
@@ -494,7 +562,7 @@ async function scrapeInfiniteScrollItems(
           var response = (await sheetsPromise.spreadsheets.get(request)).data;
           // TODO: Change code below to process the `response` object:
           
-          console.log(JSON.stringify(response, null, 2));
+          // console.log(JSON.stringify(response, null, 2));
         } catch (err) {
           console.error(err);
         }
@@ -510,13 +578,17 @@ async function scrapeInfiniteScrollItems(
         }
 
         
-        if(combined.length > 0 ){
+        if(combined.length > 0 & firstCell!= "ticker" ){
           await populateAndStyle(sheetsPromise,summaryCSV+"\n"+"\n"+dataCSV,spreadsheetId,sheetIdFound);
         res.type('text/csv');
         res.attachment('thefly.csv');
         res.send(summaryCSV+"\n"+dataCSV);
         }else{
-          await populateAndStyle(sheetsPromise,resultText,spreadsheetId,sheetIdFound);
+          if(firstCell!= "ticker"){
+            await populateAndStyle(sheetsPromise,resultText,spreadsheetId,sheetIdFound);
+          }
+          
+          resultText = "There was existing data";
           res.type('html');
           res.send(resultText);
         }
@@ -524,6 +596,7 @@ async function scrapeInfiniteScrollItems(
           console.log(e);
           console.log("ERROR Occurred Try Catch");
         } finally {
+          console.log("Ended");
           await page.close();
           await browser.close();
 
