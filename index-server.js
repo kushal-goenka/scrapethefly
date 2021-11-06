@@ -149,7 +149,7 @@ function checkScroll(){
   // }catch(e){
   //   console.log("Error While trying to scroll:",e);
   // }finally{
-    r = document.querySelectorAll(".news_table:nth-last-of-type(3)")[0].querySelectorAll('tr')[0];
+    r = document.querySelectorAll(".news_table:nth-last-of-type(2)")[0].querySelectorAll('tr')[0];
     time = r.getElementsByClassName('fpo_overlay soloHora')[0].innerText;
     date = r.getElementsByClassName('fpo_overlay soloHora')[0].querySelector('div').innerText;
   // }
@@ -586,9 +586,11 @@ async function scrapeInfiniteScrollItems(
         }else{
           if(firstCell!= "ticker"){
             await populateAndStyle(sheetsPromise,resultText,spreadsheetId,sheetIdFound);
+          }else{
+            resultText = "There was existing data";
           }
           
-          resultText = "There was existing data";
+          
           res.type('html');
           res.send(resultText);
         }
