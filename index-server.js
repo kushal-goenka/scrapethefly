@@ -458,9 +458,12 @@ async function scrapeInfiniteScrollItems(
         // Test SpreadSheet
         // const spreadsheetId = "1IUTqPEgEsqJ6mBb_BjRPK9npXuNW67quCZ3Fv1P-bMY";
 
-        // Spreadsheet shared by Arun
+        // Spreadsheet shared by Arun #v1
         
-        const spreadsheetId = "1AqTfziCDpHudFHfUzMloJwQghCmOtLJ51bVwYlswNq0";
+        // const spreadsheetId = "1AqTfziCDpHudFHfUzMloJwQghCmOtLJ51bVwYlswNq0";
+
+        // New Spreadsheet #2
+        const spreadsheetId = "12-Bk1FlSo4OzJIoih2rs_IpCffLZz7LBkjlDVGYaEGg";
 
         
         // const values = [[combined[0].title,combined[0].ticker,combined[0].Count]];
